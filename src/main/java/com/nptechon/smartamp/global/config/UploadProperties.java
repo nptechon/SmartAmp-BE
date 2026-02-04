@@ -36,4 +36,3 @@ public class UploadProperties {
         this.ffmpegPath = ffmpegPath;
     }
 }
-
