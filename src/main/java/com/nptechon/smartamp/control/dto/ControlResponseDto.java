@@ -5,6 +5,6 @@ import lombok.*;
 @Getter
 @AllArgsConstructor
 public class ControlResponseDto {
-    private String ampId;
+    private int ampId;
     private String powerCommand; // "ON" / "OFF"
 }

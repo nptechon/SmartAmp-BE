@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ControlRequestDto {
+public class StatusResponseDto {
     private int ampId;
-    private String powerCommand; // "ON" or "OFF"
+    private String status;
 }

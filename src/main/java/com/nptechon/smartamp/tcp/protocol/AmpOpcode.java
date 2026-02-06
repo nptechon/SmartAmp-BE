@@ -11,6 +11,8 @@ public enum AmpOpcode {
 
     // Amp Control
     AMP_CONTROL(0x02),          // payload: 1(On) / 0(Off)
+    AMP_STATUS_REQEUST(0x06),
+    AMP_STATUS_RESPONSE(0x86),  // payload: 1(On) / 0(Off)
 
     // Broadcast
     PLAY_PREDEFINED(0x03),      // payload: sentence index

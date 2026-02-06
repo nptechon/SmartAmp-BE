@@ -1,6 +1,8 @@
 package com.nptechon.smartamp.control;
 
 import com.nptechon.smartamp.control.dto.ControlResponseDto;
+import com.nptechon.smartamp.control.dto.StatusRequestDto;
+import com.nptechon.smartamp.control.dto.StatusResponseDto;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
 import com.nptechon.smartamp.tcp.protocol.payload.AmpPower;
@@ -16,8 +18,27 @@ public class AmpService {
 
     private final CommandSender commandSender;
 
-    public ControlResponseDto setPower(String ampIdRaw, String powerRaw) {
-        int ampId = parseAmpId(ampIdRaw);
+    public StatusResponseDto getStatus(int ampId) {
+        try {
+            // 여기서 0x86 payload 를 기다렸다가 1(ON)/0(OFF) 를 받음
+            // payload[0] = 1 → AMP ON
+            // payload[0] = 0 → AMP OFF
+            String status = commandSender.getStatus(ampId);
+            log.info("앰프 상태: {}", status);
+
+
+            return new StatusResponseDto(ampId, status);
+        } catch (IllegalStateException e) {
+            // AmpTcpSender에서 "AMP not connected" 같은 예외 던지게 해둔 경우
+            throw new CustomException(ErrorCode.DEVICE_OFFLINE, "AMP가 TCP로 연결되어 있지 않습니다.");
+        } catch (Exception e) {
+            log.error("amp status request failed ampId={}", ampId, e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "전원 제어 중 오류가 발생했습니다.");
+        }
+
+    }
+
+    public ControlResponseDto setPower(int ampId, String powerRaw) {
 
         String power = normalize(powerRaw);
         AmpPower command = switch (power) {
@@ -37,23 +58,9 @@ public class AmpService {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "전원 제어 중 오류가 발생했습니다.");
         }
 
-        return new ControlResponseDto(String.valueOf(ampId), power);
+        return new ControlResponseDto(ampId, power);
     }
 
-    private int parseAmpId(String raw) {
-        if (raw == null || raw.isBlank()) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "ampId는 필수입니다.");
-        }
-        try {
-            int id = Integer.parseInt(raw.trim());
-            if (id < 1 || id > 100) {
-                throw new CustomException(ErrorCode.INVALID_REQUEST, "ampId는 1~100 범위여야 합니다.");
-            }
-            return id;
-        } catch (NumberFormatException e) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "ampId는 숫자여야 합니다.");
-        }
-    }
 
     private String normalize(String powerRaw) {
         if (powerRaw == null) return "";
