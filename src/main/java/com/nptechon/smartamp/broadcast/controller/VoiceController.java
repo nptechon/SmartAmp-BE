@@ -1,5 +1,6 @@
 package com.nptechon.smartamp.broadcast.controller;
 
+import com.nptechon.smartamp.broadcast.service.VoiceBroadcastService;
 import com.nptechon.smartamp.global.config.UploadProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class VoiceController {
 
     private final UploadProperties uploadProperties;
+    private final VoiceBroadcastService voiceBroadcastService;
 
     /**
      * EC2 프리티어 안정 운영용: 동시 변환 1개로 제한
@@ -34,9 +36,8 @@ public class VoiceController {
     @PostMapping("/upload")
     public ResponseEntity<?> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("ampId") String ampId
-    ) throws IOException {
-
+            @RequestParam("ampId") int ampId
+    ) {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -61,13 +62,20 @@ public class VoiceController {
         if (!acquired) {
             return ResponseEntity.status(429).body(Map.of(
                     "success", false,
-                    "message", "server is busy converting audio, try again later",
-                    "maxConcurrent", MAX_CONCURRENT_CONVERSIONS
+                    "message", "server is busy converting audio, try again later"
             ));
         }
 
         Path dir = Paths.get(uploadProperties.getDir());
-        Files.createDirectories(dir);
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            CONVERT_SEMAPHORE.release();
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "failed to create upload dir"
+            ));
+        }
 
         String mp3Name = System.currentTimeMillis() + "_voice.mp3";
         Path targetMp3 = dir.resolve(mp3Name);
@@ -76,69 +84,72 @@ public class VoiceController {
 
         try (InputStream wavStream = file.getInputStream()) {
 
-            log.info(
-                    "convert start: ampId={}, origName={}, size={}, availablePermits={}",
-                    ampId,
-                    file.getOriginalFilename(),
-                    file.getSize(),
-                    CONVERT_SEMAPHORE.availablePermits()
-            );
+            log.info("convert start: ampId={}, origName={}, size={}",
+                    ampId, file.getOriginalFilename(), file.getSize());
 
+            // 1) WAV -> MP3
             convertToMp3AndSave(wavStream, targetMp3);
 
             long mp3Size = Files.size(targetMp3);
             long tookMs = System.currentTimeMillis() - startMs;
 
-            log.info(
-                    "convert done: ampId={}, savedAs={}, mp3Size={}, tookMs={}",
-                    ampId,
-                    mp3Name,
-                    mp3Size,
-                    tookMs
-            );
+            log.info("convert done: ampId={}, savedAs={}, mp3Size={}, tookMs={}",
+                    ampId, mp3Name, mp3Size, tookMs);
 
+            // 2) 변환 성공 -> 앰프로 파일 전송 시작 (비동기)
+            voiceBroadcastService.sendMp3AsFile512(ampId, targetMp3);
+            log.info("file512 send started: ampId={}, mp3={}", ampId, targetMp3);
+
+            // 응답
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "ampId", ampId,
                     "savedAs", mp3Name,
                     "size", mp3Size,
-                    "tookMs", tookMs
+                    "tookMs", tookMs,
+                    "send", "file512-started",
+                    "formatCode", 0x01
+            ));
+
+        } catch (InterruptedException ie) {
+            // 인터럽트 복구 (중요)
+            Thread.currentThread().interrupt();
+            log.warn("voice upload interrupted: ampId={}", ampId, ie);
+
+            try { Files.deleteIfExists(targetMp3); } catch (Exception ignore) {}
+
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "interrupted",
+                    "detail", ie.getMessage()
             ));
 
         } catch (Exception e) {
-            log.error("convert failed: ampId={}", ampId, e);
-            try {
-                Files.deleteIfExists(targetMp3);
-            } catch (Exception ignore) {
-            }
+            log.error("voice upload/convert/broadcast failed: ampId={}", ampId, e);
+
+            try { Files.deleteIfExists(targetMp3); } catch (Exception ignore) {}
+
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "message", "convert failed",
+                    "message", "upload or broadcast failed",
                     "detail", e.getMessage()
             ));
+
         } finally {
             CONVERT_SEMAPHORE.release();
-            log.debug(
-                    "permit released: availablePermits={}",
-                    CONVERT_SEMAPHORE.availablePermits()
-            );
+            log.debug("permit released: availablePermits={}", CONVERT_SEMAPHORE.availablePermits());
         }
     }
 
+
     /**
-     * MultipartFile InputStream(wav)을 ffmpeg stdin 으로 넣고,
-     * ffmpeg 가 만든 mp3를 파일로 저장
-     *
-     * EC2 프리티어 최적화
-     * - 모노: -ac 1
-     * - 낮은 비트레이트: 96k (필요하면 64k)
+     * WAV → MP3 변환
      */
     private void convertToMp3AndSave(
             InputStream wavStream,
             Path outputMp3
     ) throws IOException, InterruptedException {
 
-        // RN에서 wav로 보내는 전제
         List<String> cmd = List.of(
                 uploadProperties.getFfmpegPath(),
                 "-y",
@@ -147,8 +158,8 @@ public class VoiceController {
                 "-f", "wav",
                 "-i", "pipe:0",
                 "-vn",
-                "-ac", "1",          // mono
-                "-b:a", "96k",       // 64k~96k 권장
+                "-ac", "1",
+                "-b:a", "96k",
                 "-codec:a", "libmp3lame",
                 outputMp3.toAbsolutePath().toString()
         );
@@ -156,22 +167,18 @@ public class VoiceController {
         ProcessBuilder pb = new ProcessBuilder(cmd);
         Process p = pb.start();
 
-        // stderr 수집
         ByteArrayOutputStream errBuf = new ByteArrayOutputStream();
         Thread errThread = new Thread(() -> {
             try (InputStream es = p.getErrorStream()) {
                 es.transferTo(errBuf);
-            } catch (IOException ignored) {
-            }
+            } catch (IOException ignored) {}
         }, "ffmpeg-stderr-reader");
         errThread.start();
 
-        // wav -> ffmpeg stdin
         try (OutputStream ffmpegIn = p.getOutputStream()) {
             wavStream.transferTo(ffmpegIn);
         }
 
-        // 변환 완료 대기
         boolean finished = p.waitFor(60, TimeUnit.SECONDS);
         if (!finished) {
             p.destroyForcibly();
@@ -180,11 +187,9 @@ public class VoiceController {
 
         errThread.join(2000);
 
-        int exit = p.exitValue();
-        if (exit != 0) {
-            String errText = errBuf.toString(StandardCharsets.UTF_8);
+        if (p.exitValue() != 0) {
             throw new IOException(
-                    "ffmpeg failed (exit=" + exit + "): " + errText
+                    "ffmpeg failed: " + errBuf.toString(StandardCharsets.UTF_8)
             );
         }
 
