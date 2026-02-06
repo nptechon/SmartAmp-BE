@@ -2,6 +2,8 @@ package com.nptechon.smartamp.control;
 
 import com.nptechon.smartamp.control.dto.ControlRequestDto;
 import com.nptechon.smartamp.control.dto.ControlResponseDto;
+import com.nptechon.smartamp.control.dto.StatusRequestDto;
+import com.nptechon.smartamp.control.dto.StatusResponseDto;
 import com.nptechon.smartamp.global.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,22 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/amp")
 public class AmpController {
     private final AmpService ampService;
+
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<StatusResponseDto>> getStatus(@RequestParam int ampId, HttpServletRequest request) {
+
+        StatusResponseDto response = ampService.getStatus(ampId);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "ok",
+                        "앰프 전원 상태 가져오기 성공",
+                        response,
+                        request.getRequestId(),
+                        request.getRequestURI()
+                )
+        );
+    }
 
     @PostMapping("/control")
     public ResponseEntity<ApiResponse<ControlResponseDto>> setPower(@RequestBody ControlRequestDto requestDto, HttpServletRequest request) {
