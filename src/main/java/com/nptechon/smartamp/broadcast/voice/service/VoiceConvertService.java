@@ -90,6 +90,12 @@ public class VoiceConvertService {
             safeDelete(targetMp3);
             throw ce;
 
+        } catch (IllegalStateException e) {
+            throw new CustomException(
+                    ErrorCode.VOICE_CONVERT_FAILED,
+                    e.getMessage(),
+                    e
+            );
         } catch (Exception e) {
             log.error("voice upload/convert/broadcast failed: ampId={}", ampId, e);
 

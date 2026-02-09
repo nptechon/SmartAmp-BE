@@ -2,7 +2,6 @@ package com.nptechon.smartamp.control;
 
 import com.nptechon.smartamp.control.dto.ControlRequestDto;
 import com.nptechon.smartamp.control.dto.ControlResponseDto;
-import com.nptechon.smartamp.control.dto.StatusRequestDto;
 import com.nptechon.smartamp.control.dto.StatusResponseDto;
 import com.nptechon.smartamp.global.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;

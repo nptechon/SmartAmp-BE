@@ -25,7 +25,8 @@ public enum ErrorCode {
     TTS_FAILED(HttpStatus.BAD_GATEWAY, "TTS_FAILED", "TTS 변환에 실패했습니다."),
     TTS_BROADCAST_FAILED(HttpStatus.BAD_GATEWAY, "TTS_BROADCAST_FAILED", "TTS 방송에 실패했습니다."),
 
-    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "유효하지 않은 응답입니다."),
+
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "유효하지 않은 요청/응답입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
