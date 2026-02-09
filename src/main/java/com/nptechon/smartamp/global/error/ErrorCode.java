@@ -21,7 +21,7 @@ public enum ErrorCode {
     VOICE_CONVERT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "VOICE_CONVERT_FAILED", "음성 변환에 실패했습니다."),
     VOICE_UPLOAD_INTERRUPTED(HttpStatus.INTERNAL_SERVER_ERROR, "VOICE_UPLOAD_INTERRUPTED", "음성 처리 중 인터럽트가 발생했습니다."),
 
-    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "유효하지 않은 응답입니다."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "유효하지 않은 요청/응답입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
