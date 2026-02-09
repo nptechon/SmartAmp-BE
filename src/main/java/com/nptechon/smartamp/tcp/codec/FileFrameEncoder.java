@@ -53,11 +53,18 @@ public final class FileFrameEncoder {
     }
 
     /** FD: 파일 데이터 */
+    /** FD: 파일 데이터 */
     public static ByteBuf encodeData(
             ByteBufAllocator alloc,
             int seq,
             byte[] payload508
     ) {
+        if (payload508 == null || payload508.length != DATA_SIZE) {
+            throw new IllegalArgumentException(
+                    "payload must be exactly " + DATA_SIZE + " bytes"
+            );
+        }
+
         ByteBuf out = alloc.buffer(FRAME_SIZE, FRAME_SIZE);
 
         out.writeByte('F');
@@ -70,6 +77,7 @@ public final class FileFrameEncoder {
         out.writeBytes(payload508);
         return out;
     }
+
 
     /** FE */
     public static ByteBuf encodeEnd(ByteBufAllocator alloc) {
