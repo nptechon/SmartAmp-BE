@@ -18,10 +18,10 @@ public class KeywordController {
     private final KeywordService keywordService;
 
     @PostMapping("/broadcast")
-    public ResponseEntity<ApiResponse<String>> broadcast(@RequestBody KeywordBroadcastDto dto, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<KeywordBroadcastDto>> broadcast(@RequestBody KeywordBroadcastDto dto, HttpServletRequest request) {
         log.info("keyword broadcast api request!! ampId: {}, content: {}", dto.getAmpId(), dto.getContent());
-        String result = "success";
-//        String result = keywordService.broadcastTts(dto.getAmpId(), dto.getContent());
+
+        KeywordBroadcastDto result = keywordService.broadcastTts(dto.getAmpId(), dto.getContent());
 
         return ResponseEntity.ok(
                 ApiResponse.ok(
