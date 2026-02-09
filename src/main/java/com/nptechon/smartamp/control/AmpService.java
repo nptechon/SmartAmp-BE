@@ -1,7 +1,6 @@
 package com.nptechon.smartamp.control;
 
 import com.nptechon.smartamp.control.dto.ControlResponseDto;
-import com.nptechon.smartamp.control.dto.StatusRequestDto;
 import com.nptechon.smartamp.control.dto.StatusResponseDto;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
@@ -54,7 +53,7 @@ public class AmpService {
             // AmpTcpSender에서 "AMP not connected" 같은 예외 던지게 해둔 경우
             throw new CustomException(ErrorCode.DEVICE_OFFLINE, "AMP가 TCP로 연결되어 있지 않습니다.");
         } catch (Exception e) {
-            log.error("power control failed ampId={} on={}", ampId, command, e);
+            log.error("power control failed.. ampId={} on={}", ampId, command, e);
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "전원 제어 중 오류가 발생했습니다.");
         }
 
