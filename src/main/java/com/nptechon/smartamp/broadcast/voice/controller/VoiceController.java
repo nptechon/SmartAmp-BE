@@ -18,7 +18,7 @@ public class VoiceController {
 
     private final VoiceConvertService voiceConvertService;
 
-    @PostMapping("/upload")
+    @PostMapping("/broadcast")
     public ResponseEntity<ApiResponse<VoiceBroadcastResultDto>> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam("ampId") int ampId,
