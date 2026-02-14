@@ -4,6 +4,8 @@ import com.nptechon.smartamp.tcp.codec.CommandPacketCodec;
 import com.nptechon.smartamp.tcp.protocol.AmpOpcode;
 import com.nptechon.smartamp.tcp.protocol.CommandPacket;
 import com.nptechon.smartamp.tcp.protocol.DateTime7;
+import com.nptechon.smartamp.tcp.protocol.LogInfoDto;
+import com.nptechon.smartamp.tcp.protocol.payload.LogPayloadParser;
 import com.nptechon.smartamp.tcp.server.sender.CommandSender;
 import com.nptechon.smartamp.tcp.server.session.TcpSessionManager;
 import io.netty.buffer.ByteBuf;
@@ -11,6 +13,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -115,10 +119,18 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 commandSender.completeStream(ampId, result == 0);
             }
 
-
-            // LOG_RESPONSE
+            // LOG_RESPONSE (0x85)
             case 0x85 -> {
-                log.info("log response from ampId={} payloadLen={}", ampId, packet.getPayload().length);
+                try {
+                    // LogPayloadParser 로 payload 를 LogInfoDto 목록으로 변환
+                    List<LogInfoDto> logs = LogPayloadParser.parseLogResponsePayload(payload);
+
+                    log.info("<--- Rcv Log Response ampId={} total={}", ampId, logs.size());
+
+                    commandSender.completeLog(ampId, logs);
+                } catch (Exception e) {
+                    commandSender.completeLogExceptionally(ampId, e);
+                }
             }
 
             // AMP_STATUS_RESPONSE
