@@ -1,11 +1,13 @@
 package com.nptechon.smartamp.tcp.protocol.payload;
 
 import com.nptechon.smartamp.tcp.protocol.LogInfoDto;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public final class LogPayloadParser {
 
     private LogPayloadParser() {}
@@ -41,8 +43,10 @@ public final class LogPayloadParser {
             int mi = payload[off + 5] & 0xFF;
             int ss = payload[off + 6] & 0xFF;
             off += 7;
+            log.info("로그 응답 파싱 결과.. seq={}, type={}, yy={}, mm={}, dd={}, ww={}, hh={}, mi={}, ss={}", seq, type, yy, mm, dd, ww, hh, mi, ss);
 
             LocalDateTime dt = toLocalDateTime(yy, mm, dd, hh, mi, ss);
+
 
             out.add(new LogInfoDto(
                     seq, type,
