@@ -28,7 +28,9 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf frame) {
         if (CommandPacketCodec.isCommand(frame)) {
+            // 앰프에서 받은 패킷 디코딩
             CommandPacket p = CommandPacketCodec.decode(frame);
+            // Opcode 에 따라서 처리
             handleCommand(ctx, p);
             return;
         }
@@ -38,14 +40,16 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private void handleCommand(ChannelHandlerContext ctx, CommandPacket packet) {
         int ampId = packet.getDeviceId();
         int opcode = packet.getOpcode();
+        byte[] payload = packet.getPayload();
 
         switch (opcode) {
-            // DEVICE_REGISTER
+            // DEVICE_REGISTER (Request)
             case 0x01 -> {
                 sessionManager.bind(ampId, ctx.channel());
-                log.info("device registered ampId={} channel={}", ampId, ctx.channel().id());
+                log.info("---> Send Packet to Amp");
+                log.info("---> Device Register Request ampId={} channel={}", ampId, ctx.channel().id());
 
-                // ACK는 서버 시간으로 DateTime7 채워서 보낸다
+                // ACK 서버 시간으로 DateTime7 채워서 보낸다
                 byte[] serverDt7 = DateTime7.now();
 
                 ByteBuf ack = CommandPacketCodec.encode(
@@ -59,6 +63,59 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
             }
 
+            // AMP_CONTROL_RESPONSE (0x82)
+            case 0x82 -> {
+                String powerResult;
+                if (payload == null || payload.length < 1) {
+                    log.warn("<--- Rcv Power Control response from amp... invalid payload ampId={}", ampId);
+                    commandSender.completeControlExceptionally(
+                            ampId, new IllegalArgumentException("control payload empty"));
+                    return;
+                }
+
+                boolean isOn = (payload[0] & 0xFF) == 1;
+                if ((payload[0] & 0xFF) == 1) {
+                    powerResult = "on";
+                } else { powerResult = "off"; }
+                log.info("<--- Rcv Power Control response from amp... ampId={} power={}", ampId, powerResult);
+
+                // 앰프에서 응답이 왔으니 미리 만들어둔 상자에 값을 넣어줌
+                commandSender.completeControl(ampId, isOn);
+            }
+
+            // PREDEFINED_BROADCAST_RESPONSE (0x83)
+            case 0x83 -> {
+                if (payload == null || payload.length < 1) {
+                    log.warn("<--- Rcv Predefined Broadcast response from amp... invalid payload ampId={}", ampId);
+                    commandSender.completeBroadcastExceptionally(
+                            ampId, new IllegalArgumentException("broadcast payload empty"));
+                    return;
+                }
+
+                int result = payload[0] & 0xFF; // 0=OK, 1=Busy
+                boolean isBusy = (result == 1);
+                log.info("<--- Rcv Predefined Broadcast response from amp... ampId={} isBusy={}", ampId, isBusy);
+
+                commandSender.completeBroadcast(ampId, result == 0);
+            }
+
+            // STREAM_TYPE_RESPONSE (0x84)
+            case 0x84 -> {
+                if (payload == null || payload.length < 1) {
+                    log.warn("<--- Rcv Stream Type response from amp... invalid payload ampId={}", ampId);
+                    commandSender.completeStreamExceptionally(
+                            ampId, new IllegalArgumentException("stream payload empty"));
+                    return;
+                }
+
+                int result = payload[0] & 0xFF; // 0=OK, 1=Busy
+                boolean isBusy = (result == 1);
+                log.info("<--- Rcv Stream Type response from amp... ampId={} isBusy={}", ampId, isBusy);
+
+                commandSender.completeStream(ampId, result == 0);
+            }
+
+
             // LOG_RESPONSE
             case 0x85 -> {
                 log.info("log response from ampId={} payloadLen={}", ampId, packet.getPayload().length);
@@ -66,30 +123,25 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
             // AMP_STATUS_RESPONSE
             case 0x86 -> {
-                byte[] payload = packet.getPayload();
                 String statusValue;
 
                 if (payload == null || payload.length < 1) {
-                    log.warn("amp status response invalid payload ampId={} len={}",
+                    log.warn("<--- Rcv Amp Status response from amp... invalid payload ampId={} len={}",
                             ampId, payload == null ? -1 : payload.length);
-                    // 대기중인 future가 있다면 예외로 깨줄 수도 있음(선택)
                     commandSender.completeStatusExceptionally(
                             ampId, new IllegalArgumentException("status payload empty"));
                     return;
                 }
 
-                int statusRaw = payload[0] & 0xFF;   // 0 or 1
-                boolean isOn = (statusRaw == 1);
-                if (statusRaw == 1) {
+                boolean isOn = (payload[0] & 0xFF) == 1;
+                if ((payload[0] & 0xFF) == 1) {
                     statusValue = "on";
                 } else { statusValue = "off"; }
-
-                log.info("amp status response ampId={} isOn={} raw={}", ampId, isOn, statusValue);
+                log.info("<--- Rcv Amp Status response from amp... ampId={} status={}", ampId, statusValue);
 
                 // 여기서 대기중인 요청을 깨운다
-                commandSender.completeStatus(ampId, statusValue);
+                commandSender.completeStatus(ampId, isOn);
             }
-
 
             default -> {
                 log.info("command opcode=0x{} from ampId={} payloadLen={}",
