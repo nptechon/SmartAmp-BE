@@ -8,4 +8,5 @@ import lombok.Getter;
 public class IndexBroadcastDto {
     private int ampId;
     private int index;
+    private int repeat;
 }

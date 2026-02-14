@@ -8,4 +8,5 @@ import lombok.Getter;
 public class KeywordBroadcastDto {
     private int ampId;
     private String content;
+    private int repeat;
 }
