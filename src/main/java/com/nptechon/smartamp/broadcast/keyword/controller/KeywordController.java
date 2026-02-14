@@ -21,7 +21,7 @@ public class KeywordController {
     public ResponseEntity<ApiResponse<KeywordBroadcastDto>> broadcast(@RequestBody KeywordBroadcastDto dto, HttpServletRequest request) {
         log.info("keyword broadcast api request!! ampId: {}, content: {}", dto.getAmpId(), dto.getContent());
 
-        KeywordBroadcastDto result = keywordService.broadcastTts(dto.getAmpId(), dto.getContent());
+        KeywordBroadcastDto result = keywordService.broadcastTts(dto.getAmpId(), dto.getContent(), dto.getRepeat());
 
         return ResponseEntity.ok(
                 ApiResponse.ok(

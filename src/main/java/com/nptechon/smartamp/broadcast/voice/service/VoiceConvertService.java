@@ -34,7 +34,7 @@ public class VoiceConvertService {
 
 
 
-    public VoiceBroadcastResultDto uploadAndBroadcast(MultipartFile file, int ampId) {
+    public VoiceBroadcastResultDto uploadAndBroadcast(MultipartFile file, int ampId, int repeat) {
         if (file == null || file.isEmpty()) {
             throw new CustomException(ErrorCode.VOICE_FILE_EMPTY);
         }
@@ -65,7 +65,7 @@ public class VoiceConvertService {
                         ampId, mp3Name, mp3Size, tookMs);
 
                 // 2) 변환 성공 -> 앰프로 파일 전송 시작 (비동기)
-                voiceBroadcastService.sendMp3AsFile512(ampId, targetMp3);
+                voiceBroadcastService.sendMp3AsFile512(ampId, targetMp3, repeat);
                 log.info("file512 send started: ampId={}, mp3={}", ampId, targetMp3);
 
                 // 전송 요청 성공 후 바로 삭제

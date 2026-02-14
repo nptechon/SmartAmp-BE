@@ -20,7 +20,7 @@ public class IndexController {
     public ResponseEntity<ApiResponse<IndexBroadcastDto>> upload(@RequestBody IndexBroadcastDto dto, HttpServletRequest request) {
         log.info("AmpID: {}, Index: {}", dto.getAmpId(), dto.getIndex());
 
-        IndexBroadcastDto result = indexBroadcastService.sendAudioIndex(dto.getAmpId(), dto.getIndex());
+        IndexBroadcastDto result = indexBroadcastService.sendAudioIndex(dto.getAmpId(), dto.getIndex(), dto.getRepeat());
 
         return ResponseEntity.ok(
                 ApiResponse.ok(
