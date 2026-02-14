@@ -26,6 +26,18 @@ public enum ErrorCode {
     TTS_BROADCAST_FAILED(HttpStatus.BAD_GATEWAY, "TTS_BROADCAST_FAILED", "TTS 방송에 실패했습니다."),
 
 
+    // Protocol / Codec
+    PROTOCOL_ENCODE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "PROTOCOL_ENCODE_ERROR", "프로토콜 패킷 생성(인코딩)에 실패했습니다."),
+    PROTOCOL_DECODE_ERROR(HttpStatus.BAD_REQUEST, "PROTOCOL_DECODE_ERROR", "프로토콜 패킷 해석(디코딩)에 실패했습니다."),
+    PROTOCOL_INVALID_FRAME(HttpStatus.BAD_REQUEST, "PROTOCOL_INVALID_FRAME", "유효하지 않은 프로토콜 프레임입니다."),
+    PROTOCOL_INVALID_LENGTH(HttpStatus.BAD_REQUEST, "PROTOCOL_INVALID_LENGTH", "프로토콜 길이(LEN)가 유효하지 않습니다."),
+    PROTOCOL_INVALID_OPCODE(HttpStatus.BAD_REQUEST, "PROTOCOL_INVALID_OPCODE", "유효하지 않은 Opcode 입니다."),
+    PROTOCOL_INVALID_PAYLOAD(HttpStatus.BAD_REQUEST, "PROTOCOL_INVALID_PAYLOAD", "프로토콜 Payload 형식이 유효하지 않습니다."),
+    PROTOCOL_CRC_MISMATCH(HttpStatus.BAD_REQUEST, "PROTOCOL_CRC_MISMATCH", "프로토콜 CRC 검증에 실패했습니다."),
+    PROTOCOL_ETX_MISMATCH(HttpStatus.BAD_REQUEST, "PROTOCOL_ETX_MISMATCH", "프로토콜 ETX 값이 올바르지 않습니다."),
+    PROTOCOL_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "PROTOCOL_TIMEOUT", "프로토콜 응답 대기 시간이 초과되었습니다."),
+    PROTOCOL_WRITE_FAILED(HttpStatus.BAD_GATEWAY, "PROTOCOL_WRITE_FAILED", "프로토콜 패킷 전송에 실패했습니다."),
+
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "유효하지 않은 요청/응답입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 오류가 발생했습니다.");
 
