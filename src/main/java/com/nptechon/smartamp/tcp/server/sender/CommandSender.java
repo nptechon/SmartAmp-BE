@@ -5,6 +5,7 @@ import com.nptechon.smartamp.global.error.ErrorCode;
 import com.nptechon.smartamp.tcp.codec.CommandPacketCodec;
 import com.nptechon.smartamp.tcp.protocol.AmpOpcode;
 import com.nptechon.smartamp.tcp.protocol.DateTime7;
+import com.nptechon.smartamp.tcp.protocol.LogInfoDto;
 import com.nptechon.smartamp.tcp.protocol.payload.AmpPower;
 import com.nptechon.smartamp.tcp.protocol.payload.StreamType;
 import com.nptechon.smartamp.tcp.server.session.TcpSessionManager;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +35,7 @@ public class CommandSender {
     private final Map<Integer, CompletableFuture<Boolean>> pendingControl = new ConcurrentHashMap<>();
     private final Map<Integer, CompletableFuture<Boolean>> pendingBroadcast = new ConcurrentHashMap<>();
     private final Map<Integer, CompletableFuture<Boolean>> pendingStream = new ConcurrentHashMap<>();
-
+    private final Map<Integer, CompletableFuture<List<LogInfoDto>>> pendingLog = new ConcurrentHashMap<>();
 
     /**
      * 앰프 상태 가져오기
@@ -42,7 +44,7 @@ public class CommandSender {
      */
     public boolean getStatus(int ampId) {
         try {
-            boolean result = getStatusAsync(ampId).get(3, TimeUnit.SECONDS);
+            boolean result = getStatusAsync(ampId).get(5, TimeUnit.SECONDS);
             log.info("[TCP][STATUS] response sync ampId={} isOn={}", ampId, result);
             return result;
         } catch (TimeoutException e) {
@@ -96,7 +98,7 @@ public class CommandSender {
                 });
 
         // 4) 타임아웃 처리
-        future.orTimeout(3, TimeUnit.SECONDS)
+        future.orTimeout(5, TimeUnit.SECONDS)
                 .whenComplete((r, ex) -> {
                     pendingStatus.remove(ampId);
                     if (ex != null) log.warn("[TCP][STATUS] future completed exceptionally ampId={} ex={}", ampId, ex.toString());
@@ -414,28 +416,93 @@ public class CommandSender {
         }
     }
 
-    public void requestLogs(int ampId) {
-        log.info("[TCP][LOG] request ampId={}", ampId);
+    /**
+     * 로그 조회 (0x05 요청 -> 0x85 응답)
+     */
+    public List<LogInfoDto> getLogs(int ampId) {
+        try {
+            log.info("[TCP][LOG] request sync ampId={}", ampId);
+            List<LogInfoDto> result = getLogsAsync(ampId).get(15, TimeUnit.SECONDS);
+            log.info("[TCP][LOG] response sync ampId={} total={}", ampId, result == null ? 0 : result.size());
+            return result;
+        } catch (TimeoutException e) {
+            log.warn("[TCP][LOG] timeout ampId={}", ampId);
+            throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[TCP][LOG] failed ampId={}", ampId, e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        Channel ch = sessionManager.get(ampId);
-        if (ch == null || !ch.isActive()) {
-            log.warn("[TCP][LOG] offline ampId={} channel={}", ampId, ch);
+    public CompletableFuture<List<LogInfoDto>> getLogsAsync(int ampId) {
+        CompletableFuture<List<LogInfoDto>> future = new CompletableFuture<>();
+        CompletableFuture<List<LogInfoDto>> prev = pendingLog.putIfAbsent(ampId, future);
+        if (prev != null && !prev.isDone()) {
+            log.info("[TCP][LOG] already pending -> reuse future ampId={}", ampId);
+            return prev;
+        }
+
+        Channel channel = sessionManager.get(ampId);
+        if (channel == null || !channel.isActive()) {
+            pendingLog.remove(ampId, future);
+            log.warn("[TCP][LOG] offline ampId={} channel={}", ampId, channel);
             throw new CustomException(ErrorCode.DEVICE_OFFLINE, "AMP가 TCP로 연결되어 있지 않습니다.");
         }
 
-        byte[] dt7 = new byte[7];
-        ByteBuf pkt = CommandPacketCodec.encode(
-                ch.alloc(),
+        // 0x05 패킷 전송 (payload 없음)
+        byte[] dt7 = DateTime7.now();
+        ByteBuf packet = CommandPacketCodec.encode(
+                channel.alloc(),
                 ampId,
                 dt7,
-                AmpOpcode.LOG_REQUEST,
+                AmpOpcode.LOG_REQUEST, // 0x05
                 new byte[0]
         );
 
-        ch.writeAndFlush(pkt)
+        log.info("---> [TCP][LOG] send packet ampId={} opcode=0x05", ampId);
+
+        channel.writeAndFlush(packet)
                 .addListener(f -> {
-                    if (!f.isSuccess()) log.error("[TCP][LOG] write failed ampId={}", ampId, f.cause());
-                    else log.debug("[TCP][LOG] write success ampId={}", ampId);
+                    if (!f.isSuccess()) {
+                        CompletableFuture<List<LogInfoDto>> p = pendingLog.remove(ampId);
+                        if (p != null) p.completeExceptionally(f.cause());
+                        log.error("[TCP][LOG] write failed ampId={}", ampId, f.cause());
+                    } else {
+                        log.debug("[TCP][LOG] write success ampId={}", ampId);
+                    }
                 });
+
+        future.orTimeout(15, TimeUnit.SECONDS)
+                .whenComplete((r, ex) -> {
+                    pendingLog.remove(ampId);
+                    if (ex != null) log.warn("[TCP][LOG] future completed exceptionally ampId={} ex={}", ampId, ex.toString());
+                    else log.debug("[TCP][LOG] future completed ampId={} total={}", ampId, r == null ? 0 : r.size());
+                });
+
+        return future;
     }
+
+    // InboundHandler(0x85)에서 호출
+    public void completeLog(int ampId, List<LogInfoDto> logs) {
+        CompletableFuture<List<LogInfoDto>> f = pendingLog.remove(ampId);
+        if (f != null) {
+            f.complete(logs);
+            log.info("[TCP][LOG] complete ampId={} total={}", ampId, logs == null ? 0 : logs.size());
+        } else {
+            log.warn("[TCP][LOG] complete ignored (no pending) ampId={} total={}", ampId, logs == null ? 0 : logs.size());
+        }
+    }
+
+    public void completeLogExceptionally(int ampId, Throwable t) {
+        CompletableFuture<List<LogInfoDto>> f = pendingLog.remove(ampId);
+        if (f != null) {
+            f.completeExceptionally(t);
+            log.warn("[TCP][LOG] complete exceptionally ampId={} cause={}", ampId, t.toString());
+        } else {
+            log.warn("[TCP][LOG] complete exceptionally ignored (no pending) ampId={} cause={}", ampId, t.toString());
+        }
+    }
+
 }
