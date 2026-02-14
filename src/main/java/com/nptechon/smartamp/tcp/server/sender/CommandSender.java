@@ -27,7 +27,7 @@ public class CommandSender {
 
     private final TcpSessionManager sessionManager;
 
-    // pending Future 맵 ... CompletableFuture 보관
+    // pending Future 맵 ... CompletableFuture(대기 중인 요청) 보관
     // Boolean 의미: true → OK, false → Busy
     private final Map<Integer, CompletableFuture<Boolean>> pendingStatus = new ConcurrentHashMap<>();
     private final Map<Integer, CompletableFuture<Boolean>> pendingControl = new ConcurrentHashMap<>();
@@ -137,7 +137,9 @@ public class CommandSender {
     public boolean sendPower(int ampId, AmpPower power) {
         try {
             log.info("[TCP][CONTROL] request sync ampId={} power={}", ampId, power);
-            // future.get() --> 응답 올 때까지 대기!!
+
+            // [API 레벨] 동기 호출.. 비동기 요청 sendPowerAsync()를 호출하고 .get()으로 응답이 올 때까지 대기(블로킹)함
+            // future.get() --> 현재 스레드가 멈춤(block)
             boolean result = sendPowerAsync(ampId, power).get(3, TimeUnit.SECONDS);
             log.info("[TCP][CONTROL] response sync ampId={} isOn={}", ampId, result);
             return result;
@@ -150,6 +152,8 @@ public class CommandSender {
         }
     }
 
+    // [내부] 비동기 이벤트 기반 처리!!
+    // CompletableFuture<Boolean> 반환.. TCP 패킷을 Netty 가 전송.. 아직 응답은 안 옴
     public CompletableFuture<Boolean> sendPowerAsync(int ampId, AmpPower power) {
         // 앰프의 응답이 오면 넣어둘 기다릴 상자 만들기..
         CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -203,7 +207,11 @@ public class CommandSender {
         return future;
     }
 
+    // 이후 TCP 응답은 Netty EventLoop 스레드에서 비동기로 도착
+    // future.complete --> .get()으로 기다리던 스레드가 깨어남 --> sendPower() return --> HTTP 응답 반환
     public void completeControl(int ampId, boolean isOn) {
+        // 1) ampId 키에 해당하는 엔트리를 맵에서 삭제
+        // 2) 삭제된 값(CompletableFuture)을 반환
         CompletableFuture<Boolean> f = pendingControl.remove(ampId);
         if (f != null) {
             f.complete(isOn);
