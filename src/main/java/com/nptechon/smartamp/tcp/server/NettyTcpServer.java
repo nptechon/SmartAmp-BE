@@ -51,7 +51,7 @@ public class NettyTcpServer {
                 });
 
         serverChannel = b.bind(props.getPort()).sync().channel();
-        log.info("✅ Netty TCP server started at port {}", props.getPort());
+        log.info("=== Netty TCP server started at port {} ===", props.getPort());
     }
 
     @PreDestroy
@@ -61,7 +61,7 @@ public class NettyTcpServer {
         } finally {
             if (worker != null) worker.shutdownGracefully();
             if (boss != null) boss.shutdownGracefully();
-            log.info("🛑 Netty TCP server stopped");
+            log.info("=== Netty TCP server stopped ===");
         }
     }
 }

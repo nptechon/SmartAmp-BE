@@ -21,7 +21,7 @@ public class KeywordService {
     private final TextToSpeechClient ttsClient;              // Config에서 만든 Bean 주입
     private final VoiceBroadcastService voiceBroadcastService;
 
-    public KeywordBroadcastDto broadcastTts(int ampId, String content) {
+    public KeywordBroadcastDto broadcastTts(int ampId, String content, int repeat) {
         if (content == null || content.isBlank()) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "content가 비어있습니다.");
         }
@@ -30,9 +30,9 @@ public class KeywordService {
         try {
             mp3Path = synthesizeToMp3File(content);
 
-            voiceBroadcastService.sendMp3AsFile512(ampId, mp3Path);
+            voiceBroadcastService.sendMp3AsFile512(ampId, mp3Path, repeat);
 
-            return new KeywordBroadcastDto(ampId, content);
+            return new KeywordBroadcastDto(ampId, content, repeat);
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {

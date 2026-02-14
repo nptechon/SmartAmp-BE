@@ -1,5 +1,7 @@
 package com.nptechon.smartamp.tcp.codec;
 
+import com.nptechon.smartamp.global.error.CustomException;
+import com.nptechon.smartamp.global.error.ErrorCode;
 import com.nptechon.smartamp.tcp.protocol.CommandPacket;
 import com.nptechon.smartamp.tcp.protocol.AmpOpcode;
 import io.netty.buffer.ByteBuf;
@@ -62,7 +64,15 @@ public class CommandPacketCodec {
             AmpOpcode opcode,
             byte[] payload
     ) {
+
         int payloadLen = (payload == null ? 0 : payload.length);
+        switch (opcode) {
+            case PLAY_INDEX_PREDEFINED, STREAM_TYPE -> {
+                if (payloadLen != 2) {
+                    throw new CustomException(ErrorCode.PROTOCOL_INVALID_LENGTH);
+                }
+            }
+        }
         int len = 1 + 2 + 1 + 7 + 1 + payloadLen + 1 + 1;
 
         ByteBuf out = alloc.buffer(len);

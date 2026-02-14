@@ -6,11 +6,13 @@ import com.nptechon.smartamp.tcp.protocol.payload.StreamType;
 import com.nptechon.smartamp.tcp.server.sender.CommandSender;
 import com.nptechon.smartamp.tcp.server.sender.FileSender;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VoiceBroadcastService {
@@ -24,10 +26,11 @@ public class VoiceBroadcastService {
      * - FD(payload=508 bytes)
      * - FE
      */
-    public void sendMp3AsFile512(int ampId, Path mp3Path) {
+    public void sendMp3AsFile512(int ampId, Path mp3Path, int repeat) {
         try {
             // 1) opcode 0x04 먼저
-            commandSender.sendStreamType(ampId, StreamType.MIC);
+            boolean result = commandSender.sendStreamType(ampId, StreamType.MIC, repeat);
+            log.info("음성 파일 Type 전송 결과: {}", result);
 
             // 2) 그 다음 file512 전송
             fileSender.sendMp3File(

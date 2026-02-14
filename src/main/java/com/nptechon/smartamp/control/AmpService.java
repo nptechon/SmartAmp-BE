@@ -22,10 +22,10 @@ public class AmpService {
             // 여기서 0x86 payload 를 기다렸다가 1(ON)/0(OFF) 를 받음
             // payload[0] = 1 → AMP ON
             // payload[0] = 0 → AMP OFF
-            String status = commandSender.getStatus(ampId);
-            log.info("앰프 상태: {}", status);
+            boolean result = commandSender.getStatus(ampId);
+            log.info("앰프 상태 반환 결과: {}", result);
 
-
+            String status = toOnOff(result);
             return new StatusResponseDto(ampId, status);
         } catch (IllegalStateException e) {
             // AmpTcpSender에서 "AMP not connected" 같은 예외 던지게 해둔 경우
@@ -48,16 +48,18 @@ public class AmpService {
 
         // 1) 연결 여부 확인 + 2) 명령 전송 (0x02 payload: 1/0)
         try {
-            commandSender.sendPower(ampId, command);
-        } catch (IllegalStateException e) {
-            // AmpTcpSender에서 "AMP not connected" 같은 예외 던지게 해둔 경우
-            throw new CustomException(ErrorCode.DEVICE_OFFLINE, "AMP가 TCP로 연결되어 있지 않습니다.");
+            boolean result = commandSender.sendPower(ampId, command);
+            log.info("앰프 전원 제어 결과: {}", result);
+
+            String status = toOnOff(result);
+            return new ControlResponseDto(ampId, status);
+        } catch (CustomException e) {
+            // DEVICE_TIMEOUT / DEVICE_OFFLINE 등 원래 코드 그대로 전달
+            throw e;
         } catch (Exception e) {
-            log.error("power control failed.. ampId={} on={}", ampId, command, e);
+            log.error("power control failed.. ampId={} command={}", ampId, command, e);
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "전원 제어 중 오류가 발생했습니다.");
         }
-
-        return new ControlResponseDto(ampId, power);
     }
 
 
@@ -65,4 +67,9 @@ public class AmpService {
         if (powerRaw == null) return "";
         return powerRaw.trim().toUpperCase();
     }
+
+    private static String toOnOff(boolean b) {
+        return b ? "ON" : "OFF";
+    }
+
 }

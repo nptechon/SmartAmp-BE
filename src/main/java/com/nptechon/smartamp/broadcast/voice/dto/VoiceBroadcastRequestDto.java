@@ -1,12 +1,12 @@
-package com.nptechon.smartamp.broadcast.index.dto;
+package com.nptechon.smartamp.broadcast.voice.dto;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class IndexBroadcastDto {
+public class VoiceBroadcastRequestDto {
     private int ampId;
-    private int index;
     private int repeat;
 }
