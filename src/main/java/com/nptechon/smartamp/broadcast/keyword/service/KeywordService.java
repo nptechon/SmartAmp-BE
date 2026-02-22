@@ -6,6 +6,7 @@ import com.nptechon.smartamp.broadcast.keyword.dto.KeywordBroadcastDto;
 import com.nptechon.smartamp.broadcast.voice.service.VoiceBroadcastService;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
+import com.nptechon.smartamp.tcp.util.RepeatValidatorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,10 @@ public class KeywordService {
     public KeywordBroadcastDto broadcastTts(int ampId, String content, int repeat) {
         if (content == null || content.isBlank()) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "content가 비어있습니다.");
+        }
+
+        if (!RepeatValidatorUtil.isValid(repeat)) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "repeat 값은 1~5 또는 255(무한) 이어야 합니다.");
         }
 
         Path mp3Path = null;
@@ -66,7 +71,7 @@ public class KeywordService {
         SynthesizeSpeechResponse response = ttsClient.synthesizeSpeech(input, voice, audioConfig);
         ByteString audioContents = response.getAudioContent();
 
-        if (audioContents == null || audioContents.isEmpty()) {
+        if (audioContents.isEmpty()) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "TTS 결과가 비어있습니다.");
         }
 
