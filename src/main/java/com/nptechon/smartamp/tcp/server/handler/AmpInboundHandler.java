@@ -12,6 +12,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+
 @Slf4j
 @RequiredArgsConstructor
 public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
@@ -27,6 +29,8 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf frame) {
+        log.info("INBOUND RAW size={}", frame.readableBytes());
+
         if (CommandPacketCodec.isCommand(frame)) {
             // 앰프에서 받은 패킷 디코딩
             CommandPacket p = CommandPacketCodec.decode(frame);
@@ -115,10 +119,17 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 commandSender.completeStream(ampId, result == 0);
             }
 
-
-            // LOG_RESPONSE
+            // LOG_RESPONSE (0x85)
             case 0x85 -> {
-                log.info("log response from ampId={} payloadLen={}", ampId, packet.getPayload().length);
+                try {
+                    log.info("<--- Rcv Log Response ampId={} payloadSize={}",
+                            ampId, payload == null ? 0 : payload.length);
+
+                    // 파싱하지 않고 그대로 전달
+                    commandSender.completeLogPayload(ampId, payload);
+                } catch (Exception e) {
+                    commandSender.completeLogExceptionally(ampId, e);
+                }
             }
 
             // AMP_STATUS_RESPONSE

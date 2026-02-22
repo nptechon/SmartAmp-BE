@@ -53,7 +53,6 @@ public final class FileFrameEncoder {
     }
 
     /** FD: 파일 데이터 */
-    /** FD: 파일 데이터 */
     public static ByteBuf encodeData(
             ByteBufAllocator alloc,
             int seq,
