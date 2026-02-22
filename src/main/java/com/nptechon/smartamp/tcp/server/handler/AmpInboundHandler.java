@@ -4,8 +4,6 @@ import com.nptechon.smartamp.tcp.codec.CommandPacketCodec;
 import com.nptechon.smartamp.tcp.protocol.AmpOpcode;
 import com.nptechon.smartamp.tcp.protocol.CommandPacket;
 import com.nptechon.smartamp.tcp.protocol.DateTime7;
-import com.nptechon.smartamp.tcp.protocol.LogInfoDto;
-import com.nptechon.smartamp.tcp.protocol.payload.LogPayloadParser;
 import com.nptechon.smartamp.tcp.server.sender.CommandSender;
 import com.nptechon.smartamp.tcp.server.session.TcpSessionManager;
 import io.netty.buffer.ByteBuf;
@@ -31,6 +29,8 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf frame) {
+        log.info("INBOUND RAW size={}", frame.readableBytes());
+
         if (CommandPacketCodec.isCommand(frame)) {
             // 앰프에서 받은 패킷 디코딩
             CommandPacket p = CommandPacketCodec.decode(frame);
@@ -122,12 +122,11 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
             // LOG_RESPONSE (0x85)
             case 0x85 -> {
                 try {
-                    // LogPayloadParser 로 payload 를 LogInfoDto 목록으로 변환
-                    List<LogInfoDto> logs = LogPayloadParser.parseLogResponsePayload(payload);
+                    log.info("<--- Rcv Log Response ampId={} payloadSize={}",
+                            ampId, payload == null ? 0 : payload.length);
 
-                    log.info("<--- Rcv Log Response ampId={} total={}", ampId, logs.size());
-
-                    commandSender.completeLog(ampId, logs);
+                    // 파싱하지 않고 그대로 전달
+                    commandSender.completeLogPayload(ampId, payload);
                 } catch (Exception e) {
                     commandSender.completeLogExceptionally(ampId, e);
                 }
