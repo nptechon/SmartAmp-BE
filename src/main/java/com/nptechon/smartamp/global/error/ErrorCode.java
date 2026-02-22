@@ -9,10 +9,13 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     OK(HttpStatus.OK, "OK", "OK"),
 
+    // Device
+    AMP_NOT_FOUND(HttpStatus.NOT_FOUND, "AMP_NOT_FOUND", "해당 앰프를 찾을 수 없습니다."),
+    DEVICE_OFFLINE(HttpStatus.SERVICE_UNAVAILABLE, "DEVICE_OFFLINE", "앰프가 OFF 상태입니다."),
+    DEVICE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "DEVICE_TIMEOUT", "앰프 응답이 지연되었습니다."),
+    DEVICE_BUSY(HttpStatus.CONFLICT, "DEVICE_BUSY", "현재 방송 중입니다. 잠시 후 다시 시도해주세요."),
+
     // Amp Power Control
-    AMP_NOT_FOUND(HttpStatus.NOT_FOUND, "AMP_NOT_FOUND", "Amp를 찾을 수 없습니다."),
-    DEVICE_OFFLINE(HttpStatus.SERVICE_UNAVAILABLE, "DEVICE_OFFLINE", "Amp가 오프라인 상태입니다."),
-    DEVICE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "DEVICE_TIMEOUT", "Amp 응답이 지연되었습니다."),
     COMMAND_FAILED(HttpStatus.BAD_GATEWAY, "COMMAND_FAILED", "Amp 제어 명령 처리에 실패했습니다."),
 
     // Voice upload
@@ -24,7 +27,6 @@ public enum ErrorCode {
     // TTS
     TTS_FAILED(HttpStatus.BAD_GATEWAY, "TTS_FAILED", "TTS 변환에 실패했습니다."),
     TTS_BROADCAST_FAILED(HttpStatus.BAD_GATEWAY, "TTS_BROADCAST_FAILED", "TTS 방송에 실패했습니다."),
-
 
     // Protocol / Codec
     PROTOCOL_ENCODE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "PROTOCOL_ENCODE_ERROR", "프로토콜 패킷 생성(인코딩)에 실패했습니다."),
