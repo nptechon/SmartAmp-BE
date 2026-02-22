@@ -3,6 +3,7 @@ package com.nptechon.smartamp.log.service;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
 import com.nptechon.smartamp.tcp.protocol.LogInfoDto;
+import com.nptechon.smartamp.tcp.protocol.payload.LogPayloadParser;
 import com.nptechon.smartamp.tcp.server.sender.CommandSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,9 @@ public class LogService {
         validateDays(days);
 
         try {
-            List<LogInfoDto> all = commandSender.getLogs(ampId);
+            byte[] payload = commandSender.getLogs(ampId);
+
+            List<LogInfoDto> all = LogPayloadParser.parseLogResponsePayload(payload);
 
             LocalDateTime now = LocalDateTime.now(KST);
             LocalDateTime from = now.minusDays(days);
