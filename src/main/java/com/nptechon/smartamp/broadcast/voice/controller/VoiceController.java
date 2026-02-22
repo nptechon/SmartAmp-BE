@@ -29,6 +29,7 @@ public class VoiceController {
             @RequestPart("dto") VoiceBroadcastRequestDto dto,
             HttpServletRequest request
     ) {
+        log.info("voice broadcast.. AmpID: {}, repeat: {}", dto.getAmpId(), dto.getRepeat());
         VoiceBroadcastResultDto result = voiceConvertService.uploadAndBroadcast(file, dto.getAmpId(), dto.getRepeat());
 
         return ResponseEntity.ok(
