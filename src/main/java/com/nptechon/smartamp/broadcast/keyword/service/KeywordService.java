@@ -6,6 +6,7 @@ import com.nptechon.smartamp.broadcast.keyword.dto.KeywordBroadcastDto;
 import com.nptechon.smartamp.broadcast.voice.service.VoiceBroadcastService;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
+import com.nptechon.smartamp.tcp.protocol.payload.StreamType;
 import com.nptechon.smartamp.tcp.util.RepeatValidatorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class KeywordService {
         try {
             mp3Path = synthesizeToMp3File(content);
 
-            voiceBroadcastService.sendMp3AsFile512(ampId, mp3Path, repeat);
+            voiceBroadcastService.sendMp3AsFile512(ampId, mp3Path, StreamType.KEYWORD, repeat);
 
             return new KeywordBroadcastDto(ampId, content, repeat);
         } catch (CustomException e) {
