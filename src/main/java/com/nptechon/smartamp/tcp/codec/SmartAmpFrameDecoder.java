@@ -7,6 +7,20 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+/**
+ * TCP 로 들어오는 바이트 스트림을 "프레임 단위"로 잘라주는 역할
+ * SocketChannel
+ *    ↓
+ * ByteBuf (raw bytes)
+ *    ↓
+ * SmartAmpFrameDecoder
+ *    ↓
+ * CommandPacketCodec
+ *    ↓
+ * AmpInboundHandler
+ */
+
+
 @Slf4j
 public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
 
@@ -20,6 +34,15 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
     private static final int CMD_MIN_LEN = 14;
     private static final int CMD_MAX_LEN = 4096;
 
+
+    // 1) TCP 에서 데이터 도착
+    // 2) Netty 가 내부 cumulation ByteBuf 에 append
+    // 3) decode(ctx, in, out) 호출
+
+    /**
+     * in: TCP 세션에서 지금까지 누적된 바이트 버퍼 (지금까지 도착했지만 아직 처리되지 않은 바이트들)
+     * out: "완성된 프레임"을 담아서 다음 핸들러로 넘기는 리스트
+     */
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         if (in.readableBytes() > 0) {
@@ -75,6 +98,7 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
                 }
 
                 if (in.readableBytes() < len) {
+                    // 버퍼는 그대로 유지
                     return;
                 }
 
@@ -86,6 +110,7 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
                     continue;
                 }
 
+                // readerIndex를 len 만큼 앞으로 이동시키고 그 부분을 잘라서 out에 넘김
                 out.add(in.readRetainedSlice(len));
                 continue;
             }
@@ -93,5 +118,9 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
             // unknown leading byte: sync 맞추기 위해 1바이트 discard
             in.readByte();
         }
+
+        // Netty 는 내부적으로 decode()가 끝난 뒤 discardSomeReadBytes()를 호출해서 읽힌 부분(readerIndex 이전)을 정리함
+        // 즉, 이미 소비된 바이트는 버퍼 앞에서 잘라내고 안 읽힌 바이트만 유지!!
+
     }
 }

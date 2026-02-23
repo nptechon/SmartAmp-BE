@@ -1,5 +1,6 @@
-package com.nptechon.smartamp.control;
+package com.nptechon.smartamp.control.controller;
 
+import com.nptechon.smartamp.control.service.AmpService;
 import com.nptechon.smartamp.control.dto.ControlRequestDto;
 import com.nptechon.smartamp.control.dto.ControlResponseDto;
 import com.nptechon.smartamp.control.dto.StatusResponseDto;

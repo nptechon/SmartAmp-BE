@@ -1,4 +1,4 @@
-package com.nptechon.smartamp.control;
+package com.nptechon.smartamp.control.service;
 
 import com.nptechon.smartamp.control.dto.ControlResponseDto;
 import com.nptechon.smartamp.control.dto.StatusResponseDto;
@@ -30,6 +30,9 @@ public class AmpService {
         } catch (IllegalStateException e) {
             // AmpTcpSender에서 "AMP not connected" 같은 예외 던지게 해둔 경우
             throw new CustomException(ErrorCode.DEVICE_OFFLINE, "AMP가 TCP로 연결되어 있지 않습니다.");
+        } catch (CustomException e) {
+            // DEVICE_TIMEOUT / DEVICE_OFFLINE 등 원래 코드 그대로 전달
+            throw e;
         } catch (Exception e) {
             log.error("amp status request failed ampId={}", ampId, e);
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "전원 제어 중 오류가 발생했습니다.");
