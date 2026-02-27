@@ -1,6 +1,6 @@
-package com.nptechon.smartamp.broadcast.voice.service;
+package com.nptechon.smartamp.broadcast.service;
 
-import com.nptechon.smartamp.broadcast.voice.dto.VoiceBroadcastResultDto;
+import com.nptechon.smartamp.broadcast.dto.VoiceBroadcastResultDto;
 import com.nptechon.smartamp.global.config.UploadProperties;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class VoiceConvertService {
 
     private final UploadProperties uploadProperties;
-    private final VoiceBroadcastService voiceBroadcastService;
+    private final FileBroadcastService fileBroadcastService;
 
     /**
      * EC2 프리티어 안정 운영용: 동시 변환 1개로 제한
@@ -66,7 +66,7 @@ public class VoiceConvertService {
                         ampId, mp3Name, mp3Size, tookMs);
 
                 // 2) 변환 성공 -> 앰프로 파일 전송 시작 (비동기)
-                voiceBroadcastService.sendMp3AsFile512(ampId, targetMp3, StreamType.MIC, repeat);
+                fileBroadcastService.sendMp3AsFile512(ampId, targetMp3, StreamType.MIC, repeat);
                 log.info("file512 send started: ampId={}, mp3={}", ampId, targetMp3);
 
                 // 전송 요청 성공 후 바로 삭제

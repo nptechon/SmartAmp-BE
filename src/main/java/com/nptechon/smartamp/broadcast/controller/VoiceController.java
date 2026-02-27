@@ -1,8 +1,8 @@
-package com.nptechon.smartamp.broadcast.voice.controller;
+package com.nptechon.smartamp.broadcast.controller;
 
-import com.nptechon.smartamp.broadcast.voice.dto.VoiceBroadcastRequestDto;
-import com.nptechon.smartamp.broadcast.voice.dto.VoiceBroadcastResultDto;
-import com.nptechon.smartamp.broadcast.voice.service.VoiceConvertService;
+import com.nptechon.smartamp.broadcast.dto.VoiceBroadcastRequestDto;
+import com.nptechon.smartamp.broadcast.dto.VoiceBroadcastResultDto;
+import com.nptechon.smartamp.broadcast.service.VoiceConvertService;
 import com.nptechon.smartamp.global.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

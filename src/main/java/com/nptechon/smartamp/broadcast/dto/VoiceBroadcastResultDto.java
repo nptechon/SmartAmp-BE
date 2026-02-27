@@ -1,4 +1,4 @@
-package com.nptechon.smartamp.broadcast.voice.dto;
+package com.nptechon.smartamp.broadcast.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

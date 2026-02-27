@@ -1,4 +1,4 @@
-package com.nptechon.smartamp.broadcast.voice.service;
+package com.nptechon.smartamp.broadcast.service;
 
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
@@ -16,7 +16,7 @@ import java.nio.file.Path;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class VoiceBroadcastService {
+public class FileBroadcastService {
 
     private final FileSender fileSender;
     private final CommandSender commandSender;

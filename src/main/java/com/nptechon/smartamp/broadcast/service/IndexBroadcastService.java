@@ -1,6 +1,6 @@
-package com.nptechon.smartamp.broadcast.index.service;
+package com.nptechon.smartamp.broadcast.service;
 
-import com.nptechon.smartamp.broadcast.index.dto.IndexBroadcastDto;
+import com.nptechon.smartamp.broadcast.dto.IndexBroadcastDto;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
 import com.nptechon.smartamp.tcp.server.sender.CommandSender;
