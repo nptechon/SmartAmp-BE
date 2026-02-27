@@ -700,4 +700,23 @@ public class CommandSender {
                     ampId, t.toString());
         }
     }
+
+    public void failAllPending(int ampId, Throwable t) {
+        CompletableFuture<Boolean> a = pendingStatus.remove(ampId);
+        if (a != null) a.completeExceptionally(t);
+
+        CompletableFuture<Boolean> b = pendingControl.remove(ampId);
+        if (b != null) b.completeExceptionally(t);
+
+        CompletableFuture<Boolean> c = pendingBroadcast.remove(ampId);
+        if (c != null) c.completeExceptionally(t);
+
+        CompletableFuture<Boolean> d = pendingStream.remove(ampId);
+        if (d != null) d.completeExceptionally(t);
+
+        CompletableFuture<byte[]> e = pendingLog.remove(ampId);
+        if (e != null) e.completeExceptionally(t);
+
+        log.warn("[TCP] failAllPending ampId={} cause={}", ampId, t.toString());
+    }
 }
