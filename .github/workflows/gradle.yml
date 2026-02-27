@@ -100,5 +100,5 @@ jobs:
             sudo docker stop github-actions-demo 2>/dev/null || true
             sudo docker rm github-actions-demo 2>/dev/null || true
             
-            sudo docker run -d --name github-actions-demo -p 8080:8080 -e GOOGLE_APPLICATION_CREDENTIALS=/app/keys/smart-amp-google.json -v /opt/smartamp/keys/smart-amp-google.json:/app/keys/smart-amp-google.json:ro "$IMAGE"
+            sudo docker run -d --name github-actions-demo -p 8080:8080 -p 9000:9000 -e GOOGLE_APPLICATION_CREDENTIALS=/app/keys/smart-amp-google.json -v /opt/smartamp/keys/smart-amp-google.json:/app/keys/smart-amp-google.json:ro "$IMAGE"
             sudo docker image prune -f
