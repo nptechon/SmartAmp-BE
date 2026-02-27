@@ -104,6 +104,13 @@ public class CommandSender {
             return result;
         } catch (TimeoutException e) {
             log.warn("[TCP][STATUS] timeout ampId={}", ampId);
+            // 즉시 cleanup (orTimeout 기다리지 않기)
+            CompletableFuture<Boolean> f = pendingControl.get(ampId);
+            if (f != null && pendingControl.remove(ampId, f)) {
+                f.completeExceptionally(new CustomException(ErrorCode.DEVICE_TIMEOUT));
+            }
+            // 채널도 끊어서 상태 리셋
+            sessionManager.close(ampId);
             throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
         } catch (ExecutionException e) {
             // orTimeout 에서 완료된 TimeoutException 도 여기로 들어올 수 있음
@@ -217,6 +224,13 @@ public class CommandSender {
             return result;
         } catch (TimeoutException e) {
             log.warn("[TCP][CONTROL] timeout ampId={} power={}", ampId, power);
+            // 즉시 cleanup (orTimeout 기다리지 않기)
+            CompletableFuture<Boolean> f = pendingControl.get(ampId);
+            if (f != null && pendingControl.remove(ampId, f)) {
+                f.completeExceptionally(new CustomException(ErrorCode.DEVICE_TIMEOUT));
+            }
+            // 채널도 끊어서 상태 리셋
+            sessionManager.close(ampId);
             throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
         } catch (ExecutionException e) {
             // orTimeout 에서 발생한 timeout 도 DEVICE_TIMEOUT 으로
@@ -328,6 +342,13 @@ public class CommandSender {
             return result;
         } catch (TimeoutException e) {
             log.warn("[TCP][BROADCAST] timeout ampId={} index={} repeat={}", ampId, index, repeat);
+            // 즉시 cleanup (orTimeout 기다리지 않기)
+            CompletableFuture<Boolean> f = pendingControl.get(ampId);
+            if (f != null && pendingControl.remove(ampId, f)) {
+                f.completeExceptionally(new CustomException(ErrorCode.DEVICE_TIMEOUT));
+            }
+            // 채널도 끊어서 상태 리셋
+            sessionManager.close(ampId);
             throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
         } catch (ExecutionException e) {
             throwIfTimeout(e, "[TCP][BROADCAST]", ampId);
@@ -429,6 +450,13 @@ public class CommandSender {
             return result;
         } catch (TimeoutException e) {
             log.warn("[TCP][STREAM] timeout ampId={} type={} repeat={}", ampId, type, repeat);
+            // 즉시 cleanup (orTimeout 기다리지 않기)
+            CompletableFuture<Boolean> f = pendingControl.get(ampId);
+            if (f != null && pendingControl.remove(ampId, f)) {
+                f.completeExceptionally(new CustomException(ErrorCode.DEVICE_TIMEOUT));
+            }
+            // 채널도 끊어서 상태 리셋
+            sessionManager.close(ampId);
             throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
         } catch (ExecutionException e) {
             throwIfTimeout(e, "[TCP][STREAM]", ampId);
@@ -538,8 +566,14 @@ public class CommandSender {
 
         } catch (TimeoutException e) {
             log.warn("[TCP][LOG] timeout ampId={} -> close session", ampId);
+            // 즉시 cleanup (orTimeout 기다리지 않기)
+            CompletableFuture<Boolean> f = pendingControl.get(ampId);
+            if (f != null && pendingControl.remove(ampId, f)) {
+                f.completeExceptionally(new CustomException(ErrorCode.DEVICE_TIMEOUT));
+            }
+            // 채널도 끊어서 상태 리셋
+            sessionManager.close(ampId);
             throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
-
         } catch (ExecutionException e) {
             // orTimeout에서 발생한 timeout도 DEVICE_TIMEOUT으로
             if (isTimeoutCause(e)) {
