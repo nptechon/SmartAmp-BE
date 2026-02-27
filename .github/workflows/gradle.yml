@@ -69,9 +69,8 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }} \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:latest \
-            ./BE/smartamp
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }} .
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:latest .
 
       # 5. Docker Hub 이미지 푸시
       - name: Push Docker Image
