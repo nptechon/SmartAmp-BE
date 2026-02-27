@@ -41,6 +41,19 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
         log.warn("unknown frame: first={}", frame.getUnsignedByte(frame.readerIndex()));
     }
 
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Connection reset / timed out는 흔한 네트워크 종료 케이스라 info/warn 정도로만
+        log.warn("TCP exception: remote={} ch={} cause={}",
+                ctx.channel().remoteAddress(),
+                ctx.channel().id(),
+                cause.toString());
+
+        // 세션 정리 + 채널 종료
+        sessionManager.unbind(ctx.channel());
+        ctx.close();
+    }
+
     private void handleCommand(ChannelHandlerContext ctx, CommandPacket packet) {
         int ampId = packet.getDeviceId();
         int opcode = packet.getOpcode();

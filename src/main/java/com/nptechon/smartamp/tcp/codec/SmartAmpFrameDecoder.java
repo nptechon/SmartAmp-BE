@@ -53,8 +53,22 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
         while (true) {
             if (in.readableBytes() < 1) return;
 
-            int idx = in.readerIndex();
-            short first = in.getUnsignedByte(idx);
+            int ri = in.readerIndex();
+
+            // 0xAA / 0x46 이 나올 때까지 스캔해서 "한 번에" 버린다
+            int found = findNextStart(in, ri, in.writerIndex());
+            if (found < 0) {
+                // 남은 바이트들 중 시작바이트가 없으면 전부 버리고 종료 (잡음 제거)
+                in.readerIndex(in.writerIndex());
+                return;
+            }
+            if (found > ri) {
+                // 시작바이트 전까지는 전부 잡음 -> discard
+                in.readerIndex(found);
+                ri = found;
+            }
+
+            short first = in.getUnsignedByte(ri);
 
             // 1) Stream frame: fixed 512
             // 기존 코드는 first == 'F' 만으로 512바이트를 잘라서 out 에 넣었음
@@ -65,7 +79,7 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
             if (first == STRM_STX) {
                 if (in.readableBytes() < 2) return; // 헤더 2바이트는 있어야 판별 가능
 
-                short second = in.getUnsignedByte(idx + 1); // 'S'/'D'/'E' expected
+                short second = in.getUnsignedByte(ri + 1); // 'S'/'D'/'E' expected
                 boolean isStreamHeader = (second == (short) 'S' || second == (short) 'D' || second == (short) 'E');
 
                 if (isStreamHeader) {
@@ -87,13 +101,13 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
                     return;
                 }
 
-                int len = in.getUnsignedShortLE(idx + 1); // 전체 길이
+                int len = in.getUnsignedShortLE(ri + 1); // 전체 길이
 
                 int dumpLen = Math.min(in.readableBytes(), 32);
                 log.info("[CMD] readable={} len={} head={}",
                         in.readableBytes(),
                         len,
-                        io.netty.buffer.ByteBufUtil.hexDump(in.slice(idx, dumpLen))
+                        io.netty.buffer.ByteBufUtil.hexDump(in.slice(ri, dumpLen))
                 );
 
                 log.info("[DECODE] len={}", len);
@@ -113,7 +127,7 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
                 }
 
                 // ETX 확인
-                short etx = in.getUnsignedByte(idx + len - 1);
+                short etx = in.getUnsignedByte(ri + len - 1);
                 if (etx != CMD_ETX) {
                     // STX는 맞는데 ETX가 아니면 동기 깨진 것 → 1바이트 버리고 재시도
                     in.readByte();
@@ -133,4 +147,17 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
         // 즉, 이미 소비된 바이트는 버퍼 앞에서 잘라내고 안 읽힌 바이트만 유지!!
 
     }
+
+    /**
+     * readerIndex~writerIndex 범위에서 0xAA 또는 0x46을 찾아 그 index를 반환.
+     * 없으면 -1.
+     */
+    private static int findNextStart(ByteBuf in, int from, int to) {
+        for (int i = from; i < to; i++) {
+            short b = in.getUnsignedByte(i);
+            if (b == (short) 0xAA || b == (short) 0x46) return i;
+        }
+        return -1;
+    }
 }
+
