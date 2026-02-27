@@ -100,5 +100,5 @@ jobs:
             sudo docker stop github-actions-demo || true
             sudo docker rm github-actions-demo || true
 
-            sudo docker run -d --name github-actions-demo -p 8080:8080 "${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:1.0"
+            sudo docker run -d --name github-actions-demo -p 8080:8080 "${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.tag.outputs.TAG }}"
             sudo docker image prune -f
