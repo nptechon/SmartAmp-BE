@@ -88,6 +88,14 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
                 }
 
                 int len = in.getUnsignedShortLE(idx + 1); // 전체 길이
+
+                int dumpLen = Math.min(in.readableBytes(), 32);
+                log.info("[CMD] readable={} len={} head={}",
+                        in.readableBytes(),
+                        len,
+                        io.netty.buffer.ByteBufUtil.hexDump(in.slice(idx, dumpLen))
+                );
+
                 log.info("[DECODE] len={}", len);
 
                 // 길이 sanity check 강화
@@ -98,6 +106,8 @@ public class SmartAmpFrameDecoder extends ByteToMessageDecoder {
                 }
 
                 if (in.readableBytes() < len) {
+                    log.info("[CMD] waiting... readable={} < len={} (need {} more)",
+                            in.readableBytes(), len, (len - in.readableBytes()));
                     // 버퍼는 그대로 유지
                     return;
                 }

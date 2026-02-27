@@ -1,11 +1,11 @@
-package com.nptechon.smartamp.broadcast.keyword.service;
+package com.nptechon.smartamp.broadcast.service;
 
 import com.google.cloud.texttospeech.v1.*;
 import com.google.protobuf.ByteString;
-import com.nptechon.smartamp.broadcast.keyword.dto.KeywordBroadcastDto;
-import com.nptechon.smartamp.broadcast.voice.service.VoiceBroadcastService;
+import com.nptechon.smartamp.broadcast.dto.KeywordBroadcastDto;
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
+import com.nptechon.smartamp.tcp.protocol.payload.StreamType;
 import com.nptechon.smartamp.tcp.util.RepeatValidatorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.nio.file.Path;
 public class KeywordService {
 
     private final TextToSpeechClient ttsClient;              // Config에서 만든 Bean 주입
-    private final VoiceBroadcastService voiceBroadcastService;
+    private final FileBroadcastService fileBroadcastService;
 
     public KeywordBroadcastDto broadcastTts(int ampId, String content, int repeat) {
         if (content == null || content.isBlank()) {
@@ -35,7 +35,7 @@ public class KeywordService {
         try {
             mp3Path = synthesizeToMp3File(content);
 
-            voiceBroadcastService.sendMp3AsFile512(ampId, mp3Path, repeat);
+            fileBroadcastService.sendMp3AsFile512(ampId, mp3Path, StreamType.KEYWORD, repeat);
 
             return new KeywordBroadcastDto(ampId, content, repeat);
         } catch (CustomException e) {

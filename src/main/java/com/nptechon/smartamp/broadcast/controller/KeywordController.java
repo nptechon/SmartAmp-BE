@@ -1,7 +1,7 @@
-package com.nptechon.smartamp.broadcast.keyword.controller;
+package com.nptechon.smartamp.broadcast.controller;
 
-import com.nptechon.smartamp.broadcast.keyword.dto.KeywordBroadcastDto;
-import com.nptechon.smartamp.broadcast.keyword.service.KeywordService;
+import com.nptechon.smartamp.broadcast.dto.KeywordBroadcastDto;
+import com.nptechon.smartamp.broadcast.service.KeywordService;
 import com.nptechon.smartamp.global.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

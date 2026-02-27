@@ -1,7 +1,7 @@
-package com.nptechon.smartamp.broadcast.index.controller;
+package com.nptechon.smartamp.broadcast.controller;
 
-import com.nptechon.smartamp.broadcast.index.dto.IndexBroadcastDto;
-import com.nptechon.smartamp.broadcast.index.service.IndexBroadcastService;
+import com.nptechon.smartamp.broadcast.dto.IndexBroadcastDto;
+import com.nptechon.smartamp.broadcast.service.IndexBroadcastService;
 import com.nptechon.smartamp.global.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

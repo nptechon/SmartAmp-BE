@@ -1,4 +1,4 @@
-package com.nptechon.smartamp.broadcast.voice.service;
+package com.nptechon.smartamp.broadcast.service;
 
 import com.nptechon.smartamp.global.error.CustomException;
 import com.nptechon.smartamp.global.error.ErrorCode;
@@ -16,7 +16,7 @@ import java.nio.file.Path;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class VoiceBroadcastService {
+public class FileBroadcastService {
 
     private final FileSender fileSender;
     private final CommandSender commandSender;
@@ -27,14 +27,14 @@ public class VoiceBroadcastService {
      * - FD(payload=508 bytes)
      * - FE
      */
-    public void sendMp3AsFile512(int ampId, Path mp3Path, int repeat) {
+    public void sendMp3AsFile512(int ampId, Path mp3Path, StreamType streamType, int repeat) {
         try {
             if (!RepeatValidatorUtil.isValid(repeat)) {
                 throw new CustomException(ErrorCode.INVALID_REQUEST, "repeat 값은 1~5 또는 255(무한) 이어야 합니다.");
             }
 
             // 1) opcode 0x04 먼저
-            boolean ok = commandSender.sendStreamType(ampId, StreamType.MIC, repeat);
+            boolean ok = commandSender.sendStreamType(ampId, streamType, repeat);
             log.info("음성 파일 Type 전송 결과: {}", ok);
 
             // 앰프의 응답이 Busy(payload=1)면 여기서 끊고 앱에 메시지 내려주기
