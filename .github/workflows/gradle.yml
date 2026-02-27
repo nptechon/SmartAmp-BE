@@ -87,7 +87,7 @@ jobs:
             
             # 0) 키 파일 생성(EC2 호스트에)
             sudo mkdir -p /opt/smartamp/keys
-            if [ -d /opt/smartamp/keys/smart-amp-google.json ]; then sudo rm -rf /opt/smartamp/keys/smart-amp-google.json; fi
+            if [ -d /opt/smartamp/keys/smart-amp-google.json ]; then sudo rm -f /opt/smartamp/keys/smart-amp-google.json; fi
             echo "${{ secrets.GOOGLE_SECRET_KEY }}" | base64 --decode | sudo tee /opt/smartamp/keys/smart-amp-google.json > /dev/null
             sudo chmod 600 /opt/smartamp/keys/smart-amp-google.json
 
