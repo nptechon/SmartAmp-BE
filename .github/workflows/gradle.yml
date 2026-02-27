@@ -94,18 +94,20 @@ jobs:
           script: |
             set -e
             
-            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            sudo docker pull "${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
-
-            # 기존 컨테이너 정리 (없어도 에러 안 나게)
-            sudo docker stop github-actions-demo || true
-            sudo docker rm github-actions-demo || true
-
-            sudo mkdir -p /app/keys 
-            sudo docker run -d --name github-actions-demo \
-            -p 8080:8080 \
-            -e GOOGLE_APPLICATION_CREDENTIALS=/app/keys/smart-amp-google.json \
-            -v /app/keys/smart-amp-google.json:/app/keys/smart-amp-google.json:ro \
-            "${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
+            # 0) 키 파일 생성(EC2 호스트에)
+            sudo mkdir -p /opt/smartamp/keys
+            if [ -d /opt/smartamp/keys/smart-amp-google.json ]; then sudo rm -rf /opt/smartamp/keys/smart-amp-google.json; fi
+            echo "${{ secrets.GOOGLE_SECRET_KEY }}" | base64 --decode | sudo tee /opt/smartamp/keys/smart-amp-google.json > /dev/null
+            sudo chmod 600 /opt/smartamp/keys/smart-amp-google.json
             
+            # 1) 이미지 pull
+            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
+            sudo docker pull "$IMAGE"
+            
+            # 2) 컨테이너 교체
+            sudo docker stop github-actions-demo 2>/dev/null || true
+            sudo docker rm github-actions-demo 2>/dev/null || true
+            
+            sudo docker run -d --name github-actions-demo -p 8080:8080 -e GOOGLE_APPLICATION_CREDENTIALS=/app/keys/smart-amp-google.json -v /opt/smartamp/keys/smart-amp-google.json:/app/keys/smart-amp-google.json:ro "$IMAGE"
             sudo docker image prune -f
