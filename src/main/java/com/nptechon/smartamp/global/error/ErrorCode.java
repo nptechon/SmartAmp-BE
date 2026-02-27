@@ -11,7 +11,7 @@ public enum ErrorCode {
 
     // Device
     AMP_NOT_FOUND(HttpStatus.NOT_FOUND, "AMP_NOT_FOUND", "해당 앰프를 찾을 수 없습니다."),
-    DEVICE_OFFLINE(HttpStatus.SERVICE_UNAVAILABLE, "DEVICE_OFFLINE", "앰프가 OFF 상태입니다."),
+    DEVICE_OFFLINE(HttpStatus.SERVICE_UNAVAILABLE, "DEVICE_OFFLINE", "앰프가 서버와 연결되어있지 않습니다."),
     DEVICE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "DEVICE_TIMEOUT", "앰프 응답이 지연되었습니다."),
     DEVICE_BUSY(HttpStatus.CONFLICT, "DEVICE_BUSY", "현재 방송 중입니다. 잠시 후 다시 시도해주세요."),
 
