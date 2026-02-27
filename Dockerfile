@@ -1,6 +1,8 @@
 # jdk17 Image Start
 FROM eclipse-temurin:17-jdk
 
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 # 작업 디렉토리 설정
 WORKDIR /app
 
