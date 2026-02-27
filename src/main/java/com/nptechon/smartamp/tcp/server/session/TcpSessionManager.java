@@ -107,4 +107,8 @@ public class TcpSessionManager {
             log.info("[TCP][HB] stopped ch={}", ch.id());
         }
     }
+
+    public Integer getBoundDeviceId(Channel ch) {
+        return ch.attr(ATTR_DEVICE_ID).get();
+    }
 }
