@@ -41,15 +41,6 @@ jobs:
           echo "${{ secrets.APPLICATION_YML }}" | base64 --decode  > ./application.yml
         shell: bash
 
-      # GOOGLE_SECRET_KEY 파일 생성
-      - name: Create Google Key
-        run: |
-          mkdir -p ./src/main/resources
-          cd ./src/main/resources
-          rm -rf ./smart-amp-google.json || true
-          echo "${{ secrets.GOOGLE_SECRET_KEY }}" | base64 --decode > ./smart-amp-google.json
-        shell: bash
-
       # gradlew 권한 문제로 인한 권한 부여
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
