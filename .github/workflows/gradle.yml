@@ -95,6 +95,29 @@ jobs:
             echo "${{ secrets.DOCKERHUB_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
             sudo docker pull "$IMAGE"
+            set -e
+
+            echo "[disk] before cleanup"
+            df -h
+            sudo docker system df || true
+            
+            # 1) 안 쓰는 컨테이너/이미지/볼륨/빌드캐시 정리 (pull 전에!)
+            sudo docker container prune -f || true
+            sudo docker image prune -af || true
+            sudo docker volume prune -f || true
+            sudo docker builder prune -af || true
+            
+            # containerd 기반이면 스냅샷/컨텐츠도 커질 수 있어서 docker cleanup이 제일 안전함
+            echo "[disk] after docker cleanup"
+            df -h
+            sudo docker system df || true
+            
+            # 2) 로그가 너무 크면(가끔 수 GB) 같이 정리
+            sudo journalctl --vacuum-time=3d || true
+            sudo find /var/log -type f -name "*.log" -size +100M -exec sudo truncate -s 0 {} \; || true
+            
+            echo "[disk] after log cleanup"
+            df -h
             
             # 2) 컨테이너 교체
             sudo docker stop github-actions-demo 2>/dev/null || true
