@@ -90,12 +90,6 @@ jobs:
             if [ -d /opt/smartamp/keys/smart-amp-google.json ]; then sudo rm -rf /opt/smartamp/keys/smart-amp-google.json; fi
             echo "${{ secrets.GOOGLE_SECRET_KEY }}" | base64 --decode | sudo tee /opt/smartamp/keys/smart-amp-google.json > /dev/null
             sudo chmod 600 /opt/smartamp/keys/smart-amp-google.json
-            
-            # 1) 이미지 pull
-            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
-            sudo docker pull "$IMAGE"
-            set -e
 
             echo "[disk] before cleanup"
             df -h
@@ -119,7 +113,13 @@ jobs:
             echo "[disk] after log cleanup"
             df -h
             
-            # 2) 컨테이너 교체
+            # 3) 이미지 pull
+            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
+            sudo docker pull "$IMAGE"
+            set -e
+            
+            # 4) 컨테이너 교체
             sudo docker stop github-actions-demo 2>/dev/null || true
             sudo docker rm github-actions-demo 2>/dev/null || true
             
