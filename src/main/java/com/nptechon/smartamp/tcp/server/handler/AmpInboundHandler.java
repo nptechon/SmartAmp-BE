@@ -1,5 +1,7 @@
 package com.nptechon.smartamp.tcp.server.handler;
 
+import com.nptechon.smartamp.global.error.CustomException;
+import com.nptechon.smartamp.global.error.ErrorCode;
 import com.nptechon.smartamp.tcp.codec.CommandPacketCodec;
 import com.nptechon.smartamp.tcp.protocol.AmpOpcode;
 import com.nptechon.smartamp.tcp.protocol.CommandPacket;
@@ -12,8 +14,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
-
 @Slf4j
 @RequiredArgsConstructor
 public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
@@ -21,9 +21,16 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private final TcpSessionManager sessionManager;
     private final CommandSender commandSender;
 
+
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
+        Integer ampId = sessionManager.getBoundDeviceId(ctx.channel());
         sessionManager.unbind(ctx.channel());
+
+        if (ampId != null) {
+            commandSender.failAllPending(ampId, new CustomException(ErrorCode.DEVICE_OFFLINE));
+        }
+
         log.info("channel inactive: {}", ctx.channel().id());
     }
 
@@ -43,6 +50,7 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        Integer ampId = sessionManager.getBoundDeviceId(ctx.channel());
         // Connection reset / timed out는 흔한 네트워크 종료 케이스라 info/warn 정도로만
         log.warn("TCP exception: remote={} ch={} cause={}",
                 ctx.channel().remoteAddress(),
@@ -51,6 +59,9 @@ public class AmpInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
         // 세션 정리 + 채널 종료
         sessionManager.unbind(ctx.channel());
+        if (ampId != null) {
+            commandSender.failAllPending(ampId, new CustomException(ErrorCode.DEVICE_OFFLINE));
+        }
         ctx.close();
     }
 
