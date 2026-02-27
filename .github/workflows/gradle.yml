@@ -100,5 +100,10 @@ jobs:
             sudo docker stop github-actions-demo || true
             sudo docker rm github-actions-demo || true
 
-            sudo docker run -d --name github-actions-demo -p 8080:8080 "${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
+            sudo docker run -d --name github-actions-demo \
+            -p 8080:8080 \
+            -e GOOGLE_APPLICATION_CREDENTIALS=/app/keys/smart-amp-google.json \
+            -v /opt/smartamp/keys/smart-amp-google.json:/app/keys/smart-amp-google.json:ro \
+            "${{ secrets.DOCKERHUB_USERNAME }}/smart-amp:${{ steps.tag.outputs.TAG }}"
+            
             sudo docker image prune -f
