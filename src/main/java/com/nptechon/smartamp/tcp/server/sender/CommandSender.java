@@ -538,22 +538,12 @@ public class CommandSender {
 
         } catch (TimeoutException e) {
             log.warn("[TCP][LOG] timeout ampId={} -> close session", ampId);
-            try {
-                sessionManager.close(ampId);
-            } catch (Exception closeEx) {
-                log.warn("[TCP][LOG] close failed ampId={} ex={}", ampId, closeEx.toString());
-            }
             throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
 
         } catch (ExecutionException e) {
             // orTimeout에서 발생한 timeout도 DEVICE_TIMEOUT으로
             if (isTimeoutCause(e)) {
                 log.warn("[TCP][LOG] timeout(unwrap) ampId={} -> close session cause={}", ampId, e.toString());
-                try {
-                    sessionManager.close(ampId);
-                } catch (Exception closeEx) {
-                    log.warn("[TCP][LOG] close failed ampId={} ex={}", ampId, closeEx.toString());
-                }
                 throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
             }
 
@@ -565,11 +555,6 @@ public class CommandSender {
         } catch (CompletionException e) {
             if (isTimeoutCause(e)) {
                 log.warn("[TCP][LOG] timeout(unwrap) ampId={} -> close session cause={}", ampId, e.toString());
-                try {
-                    sessionManager.close(ampId);
-                } catch (Exception closeEx) {
-                    log.warn("[TCP][LOG] close failed ampId={} ex={}", ampId, closeEx.toString());
-                }
                 throw new CustomException(ErrorCode.DEVICE_TIMEOUT);
             }
 
@@ -638,11 +623,6 @@ public class CommandSender {
                         // timeout이면 세션 close로 누적 버퍼/동기 문제를 끊어버림
                         if (isTimeoutCause(ex)) {
                             log.warn("[TCP][LOG] timeout detected -> close session ampId={}", ampId);
-                            try {
-                                sessionManager.close(ampId);
-                            } catch (Exception closeEx) {
-                                log.warn("[TCP][LOG] close failed ampId={} ex={}", ampId, closeEx.toString());
-                            }
                         }
                     } else {
                         log.debug("[TCP][LOG] future completed ampId={} payloadSize={}",
