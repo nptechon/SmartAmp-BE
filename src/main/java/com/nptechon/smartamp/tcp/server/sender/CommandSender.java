@@ -140,7 +140,7 @@ public class CommandSender {
         if (channel == null || !channel.isActive()) {
             pendingStatus.remove(ampId, future);
             log.warn("[TCP][STATUS] offline ampId={} channel={}", ampId, channel);
-            future.completeExceptionally(new CustomException(ErrorCode.DEVICE_OFFLINE, "앰프가 TCP로 연결되어 있지 않습니다."));
+            future.completeExceptionally(new CustomException(ErrorCode.DEVICE_OFFLINE));
             return future;
         }
 
@@ -600,8 +600,7 @@ public class CommandSender {
             pendingLog.remove(ampId, future);
             log.warn("[TCP][LOG] offline ampId={} channel={}", ampId, channel);
             future.completeExceptionally(
-                    new CustomException(ErrorCode.DEVICE_OFFLINE,
-                            "앰프가 TCP로 연결되어 있지 않습니다."));
+                    new CustomException(ErrorCode.DEVICE_OFFLINE));
             return future;
         }
 
