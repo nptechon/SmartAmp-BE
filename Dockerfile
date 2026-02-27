@@ -4,9 +4,6 @@ FROM eclipse-temurin:17-jdk
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# JSON 키 파일들 복사
-COPY src/main/resources/smart-amp-google.json /app/
-
 # 인자 설정 - JAR_File
 ARG JAR_FILE=build/libs/*.jar
 
